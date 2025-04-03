@@ -49,11 +49,6 @@ struct Args {
     /// Print verbose information during compilation
     #[arg(short, long)]
     verbose: bool,
-    
-    /// Path to the opcodes definition file
-    #[arg(short = 'p', long)]
-    opcodes: Option<PathBuf>,
-    
     /// Output format for the compiled binary [default: elf]
     #[arg(short = 'f', long, value_enum, default_value_t = OutputFormat::Elf)]
     format: OutputFormat,

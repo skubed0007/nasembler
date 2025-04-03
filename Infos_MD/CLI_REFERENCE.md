@@ -33,12 +33,6 @@ These options are useful for debugging and understanding the assembly process:
 | | `--dump-tokens` | Dump tokens after tokenization. |
 | | `--dump-ast` | Dump the Abstract Syntax Tree (AST) after parsing. |
 
-## Configuration Options
-
-| Option | Long Option | Description |
-|--------|-------------|-------------|
-| `-p <FILE>` | `--opcodes <FILE>` | Path to the opcodes definition file. |
-
 ## Examples
 
 ### Basic Assembly
