@@ -1,6 +1,6 @@
 # x86-64 Assembly Language Guide
 
-This guide serves as a reference for x86-64 assembly language, focusing on the syntax and features supported by NASembler.
+This guide serves as a reference for x86-64 assembly language, focusing on the syntax and features supported by nasembler.
 
 ## Assembly Basics
 

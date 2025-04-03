@@ -1,6 +1,6 @@
-# Nasembler Assembly Pipeline Diagrams
+# nasembler Assembly Pipeline Diagrams
 
-This document provides visual diagrams of the complete assembly pipeline in Nasembler, showing how data flows from source code to executable binary.
+This document provides visual diagrams of the complete assembly pipeline in nasembler, showing how data flows from source code to executable binary.
 
 ## Complete Pipeline Overview
 
@@ -268,9 +268,9 @@ This document provides visual diagrams of the complete assembly pipeline in Nase
 └───────────────────────────────────────────────────┘
 
 ┌───────────────────────────────────────────────────┐
-│               Nasembler Pipeline                  │
+│               nasembler Pipeline                  │
 ├───────────────────────────────────────────────────┤
-│  Assembly  │    Nasembler    │    Executable      │
+│  Assembly  │    nasembler    │    Executable      │
 │   (.asm)   │                 │      (ELF)         │
 └───────────────────────────────────────────────────┘
 ``` 

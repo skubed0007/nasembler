@@ -1,6 +1,6 @@
 # x86-64 Instruction Reference
 
-This document provides a reference for the x86-64 instructions supported by NASembler.
+This document provides a reference for the x86-64 instructions supported by nasembler.
 
 ## Instruction Encoding Overview
 

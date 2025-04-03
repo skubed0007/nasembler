@@ -1,6 +1,6 @@
-# Nasembler Source Code Walkthrough
+# nasembler Source Code Walkthrough
 
-This document provides a detailed explanation of each source file in the Nasembler project, going through the codebase file by file to explain the purpose, structure, and implementation details.
+This document provides a detailed explanation of each source file in the nasembler project, going through the codebase file by file to explain the purpose, structure, and implementation details.
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@ This document provides a detailed explanation of each source file in the Nasembl
 
 ## main.rs
 
-`main.rs` serves as the entry point for the Nasembler application, handling command-line arguments, file I/O, and orchestrating the overall assembly process.
+`main.rs` serves as the entry point for the nasembler application, handling command-line arguments, file I/O, and orchestrating the overall assembly process.
 
 ### Key Components:
 

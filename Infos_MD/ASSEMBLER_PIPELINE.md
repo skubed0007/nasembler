@@ -1,10 +1,10 @@
-# NASembler Pipeline
+# nasembler Pipeline
 
-This document explains the complete assembly pipeline in NASembler, from source code to executable binary.
+This document explains the complete assembly pipeline in nasembler, from source code to executable binary.
 
 ## Overview
 
-NASembler follows a traditional compiler pipeline with these main phases:
+nasembler follows a traditional compiler pipeline with these main phases:
 
 1. **Source Code Reading**: Reading the assembly source file
 2. **Lexical Analysis (Tokenization)**: Converting source text into tokens
@@ -59,7 +59,7 @@ The parser (`src/parser/mod.rs`) converts the token stream into an Abstract Synt
 
 #### Multi-Pass Parsing
 
-NASembler uses a multi-pass approach to parsing:
+nasembler uses a multi-pass approach to parsing:
 
 1. **Label Collection Pass**: Scans for label definitions and builds a symbol table
 2. **Statement Parsing Pass**: Parses tokens into structured AST statements
@@ -165,7 +165,7 @@ elf_generator.generate(&output_path)?;
 
 #### Memory Layout
 
-NASembler uses a fixed memory layout for simplicity:
+nasembler uses a fixed memory layout for simplicity:
 
 - **Text Section**: 0x400000 (4 MB)
 - **Data Section**: 0x600000 (6 MB)
@@ -253,7 +253,7 @@ The ELF generator:
 
 ## Debugging Tools
 
-NASembler provides several debugging options:
+nasembler provides several debugging options:
 
 - **--tokenize-only**: Stop after tokenization
 - **--parse-only**: Stop after parsing
@@ -265,7 +265,7 @@ These help diagnose issues in different pipeline stages.
 
 ## Performance Considerations
 
-NASembler optimizes performance in several ways:
+nasembler optimizes performance in several ways:
 
 1. **Single-Pass Tokenization**: Minimizes string handling
 2. **Early Label Resolution**: Avoids multiple passes over code

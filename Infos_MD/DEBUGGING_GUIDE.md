@@ -1,6 +1,6 @@
-# NASembler Debugging Guide
+# nasembler Debugging Guide
 
-This guide provides strategies and tools for debugging assembly code using NASembler.
+This guide provides strategies and tools for debugging assembly code using nasembler.
 
 ## Common Issues and Solutions
 
@@ -213,7 +213,7 @@ _start:
 
 ## Debugging Tools
 
-NASembler provides several debugging tools:
+nasembler provides several debugging tools:
 
 ### Command Line Options
 
@@ -432,7 +432,7 @@ Build your program in small, testable steps:
 
 If you're stuck, consider:
 
-1. Checking the NASembler documentation
+1. Checking the nasembler documentation
 2. Reviewing x86-64 instruction references
 3. Looking at example code in the repository
 4. Consulting online forums for assembly programming

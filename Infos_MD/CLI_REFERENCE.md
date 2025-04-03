@@ -1,6 +1,6 @@
-# NASembler Command-Line Reference
+# nasembler Command-Line Reference
 
-This document details the command-line interface (CLI) options available in NASembler.
+This document details the command-line interface (CLI) options available in nasembler.
 
 ## Basic Usage
 
@@ -8,13 +8,13 @@ This document details the command-line interface (CLI) options available in NASe
 nasembler [OPTIONS] <INPUT_FILE>
 ```
 
-The NASembler command-line interface provides a range of options to control the assembly process. The only required argument is the input file path.
+The nasembler command-line interface provides a range of options to control the assembly process. The only required argument is the input file path.
 
 ## Core Options
 
 | Option | Long Option | Description |
 |--------|-------------|-------------|
-| `-o <FILE>` | `--output <FILE>` | Specify the output file name. If omitted, NASembler will use the input file name without the extension for ELF format, or with appropriate extension for other formats. |
+| `-o <FILE>` | `--output <FILE>` | Specify the output file name. If omitted, nasembler will use the input file name without the extension for ELF format, or with appropriate extension for other formats. |
 | `-f <FORMAT>` | `--format <FORMAT>` | Specify the output format. Available options: `elf` (default), `bin`, `hex`. |
 | `-v` | `--verbose` | Enable verbose output with detailed information about the assembly process. |
 | `-x` | `--execute` | Execute the compiled binary after successful assembly. |
@@ -85,7 +85,7 @@ nasembler program.asm --dump-ast
 
 ## Error Handling
 
-By default, NASembler will collect all errors in a file and report them together. You can change this behavior:
+By default, nasembler will collect all errors in a file and report them together. You can change this behavior:
 
 ```bash
 # Stop on the first error
@@ -111,7 +111,7 @@ nasembler program.asm -ex
 
 ## Exit Codes
 
-NASembler returns the following exit codes:
+nasembler returns the following exit codes:
 
 | Exit Code | Description |
 |-----------|-------------|
@@ -123,7 +123,7 @@ NASembler returns the following exit codes:
 
 ## Environment Variables
 
-Currently, NASembler does not use any environment variables for configuration.
+Currently, nasembler does not use any environment variables for configuration.
 
 ## Tips and Tricks
 

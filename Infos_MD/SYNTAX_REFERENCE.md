@@ -1,6 +1,6 @@
-# NASembler Syntax Reference
+# nasembler Syntax Reference
 
-This document provides a comprehensive guide to the syntax supported by NASembler, a modern x86-64 assembler. Understanding this syntax is essential for writing assembly code that can be correctly processed by NASembler.
+This document provides a comprehensive guide to the syntax supported by nasembler, a modern x86-64 assembler. Understanding this syntax is essential for writing assembly code that can be correctly processed by nasembler.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This document provides a comprehensive guide to the syntax supported by NASemble
 
 ## Basic Structure
 
-A NASembler program consists of a sequence of statements, each on its own line. Each statement can be:
+A nasembler program consists of a sequence of statements, each on its own line. Each statement can be:
 
 - A section declaration
 - A label definition
@@ -229,4 +229,4 @@ Here are common syntax errors to avoid:
    message db "Hello, World   ; Error: missing closing quote
    ```
 
-When encountering errors, NASembler provides detailed error messages with file locations, line and column numbers, and suggestions for fixing the issues. 
+When encountering errors, nasembler provides detailed error messages with file locations, line and column numbers, and suggestions for fixing the issues. 

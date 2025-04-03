@@ -1,6 +1,6 @@
-# NASembler Example Programs
+# nasembler Example Programs
 
-This document provides a collection of example programs demonstrating common patterns and techniques when using NASembler.
+This document provides a collection of example programs demonstrating common patterns and techniques when using nasembler.
 
 ## Table of Contents
 
@@ -449,7 +449,7 @@ Remember to check the Linux syscall table for more available syscalls and their 
 
 ## Testing and Running Examples
 
-To assemble and run an example with NASembler:
+To assemble and run an example with nasembler:
 
 ```
 nasembler example.asm -x

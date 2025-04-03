@@ -1,6 +1,6 @@
-# NASembler Documentation Index
+# nasembler Documentation Index
 
-Welcome to the NASembler documentation! This index provides links to all available documentation for the NASembler x86-64 assembler.
+Welcome to the nasembler documentation! This index provides links to all available documentation for the nasembler x86-64 assembler.
 
 ## Core Documentation
 
@@ -34,14 +34,14 @@ Welcome to the NASembler documentation! This index provides links to all availab
 
 ## Examples
 
-The repository includes example assembly files that demonstrate NASembler's capabilities:
+The repository includes example assembly files that demonstrate nasembler's capabilities:
 
 - [test.asm](test.asm): Simple "Hello, World!" example
 - [test2.asm](test2.asm): More complex example with multiple strings
 
 ## Getting Started
 
-If you're new to NASembler, we recommend starting with the following documents:
+If you're new to nasembler, we recommend starting with the following documents:
 
 1. [README.md](README.md) - Basic overview and setup
 2. [X86_64_ASSEMBLY_GUIDE.md](X86_64_ASSEMBLY_GUIDE.md) - Introduction to x86-64 assembly

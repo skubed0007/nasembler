@@ -1,10 +1,10 @@
-# NASembler - Architecture Overview
+# nasembler - Architecture Overview
 
-This document provides a detailed explanation of the architecture and internal components of NASembler, a native x86-64 assembler written in Rust.
+This document provides a detailed explanation of the architecture and internal components of nasembler, a native x86-64 assembler written in Rust.
 
 ## High-Level Architecture
 
-NASembler follows a traditional compiler architecture with the following pipeline:
+nasembler follows a traditional compiler architecture with the following pipeline:
 
 1. **Lexical Analysis (Tokenization)**: Converts raw source code into tokens
 2. **Parsing**: Transforms tokens into an Abstract Syntax Tree (AST)
