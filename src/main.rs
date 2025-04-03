@@ -17,7 +17,7 @@ use parser::ast::Program;
 use elf::ElfGenerator;
 use error::{ErrorCollector, Error, ErrorType, ErrorDetail, ErrorSeverity};
 
-/// NASimulator - A modern x86-64 assembler
+/// nasembler - A modern x86-64 assembler
 #[derive(ClapParser, Debug)]
 #[command(author, version, about, long_about = None)]
 #[clap(group(ArgGroup::new("output_mode").args(&["parse_only", "tokenize_only", "dump_tokens", "dump_ast"])))]
@@ -89,7 +89,7 @@ fn main() -> Result<(), String> {
     // Header message
     if !args.silent {
         println!("{}", "─".repeat(60).bright_blue());
-        println!("{} {}", "NASimulator".bright_white().bold(), "- x86-64 Assembler".bright_blue());
+        println!("{} {}", "nasembler".bright_white().bold(), "- x86-64 Assembler".bright_blue());
         println!("{}", "─".repeat(60).bright_blue());
     }
     
