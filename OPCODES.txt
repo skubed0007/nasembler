@@ -1,0 +1,70 @@
+Here is the revised list:
+Data Movement Instructions
+MOV
+Instruction	Machine Code
+mov	48 B8
+rax	48 B8
+rbx	48 89 C3
+rcx	48 B9
+rdx	48 89 D3
+LEA
+Instruction	Machine Code
+lea	48 8D
+rax	05
+rbx	1C 03
+rcx	1C 12
+PUSH
+Instruction	Machine Code
+push	50
+rax	50
+rbx	53
+rcx	51
+rdx	52
+POP
+Instruction	Machine Code
+pop	58
+rax	58
+rbx	5B
+rcx	59
+rdx	5A
+Arithmetic Instructions
+ADD
+Instruction	Machine Code
+add	48 83 C0
+rax	48 83 C0
+rbx	48 01 C3
+rcx	48 83 C1
+SUB
+Instruction	Machine Code
+sub	48 83 E8
+rax	48 83 E8
+rbx	48 29 C3
+rcx	48 83 E9
+MUL
+Instruction	Machine Code
+mul	48 F7 E0
+rax	48 F7 E0
+rbx	48 F7 E3
+rcx	48 F7 E1
+DIV
+Instruction	Machine Code
+div	48 F7 F0
+rax	48 F7 F0
+rbx	48 F7 F3
+rcx	48 F7 F1
+Control Flow Instructions
+JMP
+Instruction	Machine Code
+jmp	E9
+rax	FF E0
+rbx	FF E3
+JE
+Instruction	Machine Code
+je	74
+rax	FF E0
+rbx	FF E3
+JNE
+Instruction	Machine Code
+jne	75
+rax	FF E0
+rbx	FF E3

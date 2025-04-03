@@ -1,0 +1,444 @@
+use crate::parser::ast::{Statement, Instruction, Operand, MemoryReference};
+use crate::tokenizer::{TokenType, Token};
+use crate::parser::Parser;
+use crate::encoder::MachineCodeEncoder;
+
+/// Parse an instruction statement
+pub fn parse_instruction(parser: &mut Parser) -> Result<Statement, String> {
+    let token = match parser.peek() {
+        Some((token, _)) => token,
+        None => return Err("Unexpected end of tokens while parsing instruction".to_string()),
+    };
+    
+    // Check if this is an instruction
+    let is_instruction = match token.token_type {
+        TokenType::Instruction | TokenType::InstrData | TokenType::InstrArith 
+        | TokenType::InstrLogic | TokenType::InstrJump | TokenType::InstrSIMD => true,
+        _ => false,
+    };
+    
+    if !is_instruction {
+        return Err(format!("Expected instruction at line {}", token.line));
+    }
+    
+    let instruction_name = token.value.clone().to_lowercase();
+    let line = token.line;
+    parser.advance(); // Consume the instruction token
+    
+    // Parse operands
+    let mut operands = Vec::new();
+    
+    loop {
+        match parser.peek() {
+            Some((token, _)) => {
+                // Stop if we hit a new line, comment, or end of tokens
+                if token.token_type == TokenType::NewLine || token.token_type == TokenType::Comment {
+                    break;
+                }
+                
+                // If comma, consume it and continue
+                if token.token_type == TokenType::Comma {
+                    parser.advance();
+                    continue;
+                }
+                
+                // Parse operand
+                let operand = parse_operand(parser)?;
+                operands.push(operand);
+                
+                // Check if next token is a comma
+                match parser.peek() {
+                    Some((next, _)) if next.token_type == TokenType::Comma => {
+                        parser.advance(); // Consume comma
+                    },
+                    Some((next, _)) if next.token_type == TokenType::NewLine || next.token_type == TokenType::Comment => {
+                        break; // End of operands
+                    },
+                    None => break, // End of tokens
+                    _ => break,    // No comma, so we're done with operands
+                }
+            },
+            None => break, // End of tokens
+        }
+    }
+    
+    // Create the instruction
+    let mut instruction = Instruction {
+        name: instruction_name,
+        operands,
+        machine_code: Vec::new(),
+        line,
+    };
+    
+    // Try to encode the instruction
+    let encoder = MachineCodeEncoder::new();
+    instruction.machine_code = encoder.encode(&instruction);
+    
+    Ok(Statement::Instruction(instruction))
+}
+
+/// Parse an operand (register, immediate, memory reference, or label)
+fn parse_operand(parser: &mut Parser) -> Result<Operand, String> {
+    let (token, line) = match parser.peek() {
+        Some(t) => t,
+        None => return Err("Unexpected end of tokens while parsing operand".to_string()),
+    };
+    
+    match token.token_type {
+        TokenType::Register | TokenType::Reg64Bit | TokenType::Reg32Bit 
+        | TokenType::Reg16Bit | TokenType::Reg8Bit | TokenType::RegXMM 
+        | TokenType::RegYMM | TokenType::RegZMM | TokenType::RegSpecial => {
+            parser.advance();
+            Ok(Operand::Register(token.value.clone()))
+        },
+        TokenType::Label | TokenType::LabelRef => {
+            parser.advance();
+            Ok(Operand::Label(token.value.clone()))
+        },
+        TokenType::Immediate => {
+            parser.advance();
+            Ok(Operand::Immediate(token.value.clone()))
+        },
+        TokenType::StringLiteral => {
+            parser.advance();
+            // Remove quotes from the string value
+            let value = token.value.trim_matches(|c| c == '"' || c == '\'').to_string();
+            Ok(Operand::String(value))
+        },
+        TokenType::OpenBracket => {
+            parser.advance(); // Consume '['
+            
+            let memory_ref = parse_memory_reference(parser)?;
+            
+            // Expect closing bracket
+            let (token, line) = match parser.peek() {
+                Some(t) => t,
+                None => return Err("Unexpected end of tokens while parsing memory reference".to_string()),
+            };
+                
+            if token.token_type != TokenType::CloseBracket {
+                return Err(format!("Expected closing bracket at line {}", line));
+            }
+            parser.advance(); // Consume ']'
+            
+            Ok(Operand::Memory(memory_ref))
+        },
+        _ => Err(format!("Unexpected token type {:?} for operand at line {}", token.token_type, line)),
+    }
+}
+
+/// Parse a memory reference [base + index*scale + disp]
+fn parse_memory_reference(parser: &mut Parser) -> Result<MemoryReference, String> {
+    let mut base = None;
+    let mut index = None;
+    let mut scale = None;
+    let mut displacement = None;
+    
+    // Parse base register or displacement
+    match parser.peek() {
+        Some((token, _)) => {
+            match token.token_type {
+                TokenType::Register | TokenType::Reg64Bit | TokenType::Reg32Bit
+                | TokenType::Reg16Bit | TokenType::Reg8Bit => {
+                    let reg_value = token.value.clone();
+                    parser.advance();
+                    base = Some(reg_value);
+                },
+                TokenType::Immediate => {
+                    let imm_value = token.value.clone();
+                    parser.advance();
+                    displacement = Some(imm_value);
+                },
+                TokenType::Label | TokenType::LabelRef => {
+                    let label_value = token.value.clone();
+                    parser.advance();
+                    // Assume it's a symbol/label
+                    displacement = Some(label_value);
+                },
+                _ => {
+                    // Empty memory reference
+                },
+            }
+        },
+        None => {
+            // Empty memory reference
+        },
+    }
+    
+    // Check for additional components
+    loop {
+        match parser.peek() {
+            Some((token, _)) => {
+                match token.token_type {
+                    TokenType::Plus => {
+                        parser.advance(); // Consume '+'
+                        
+                        // Parse what comes after the '+'
+                        match parser.peek() {
+                            Some((next, _)) => {
+                                match next.token_type {
+                                    TokenType::Register | TokenType::Reg64Bit | TokenType::Reg32Bit
+                                    | TokenType::Reg16Bit | TokenType::Reg8Bit => {
+                                        let reg_value = next.value.clone();
+                                        parser.advance();
+                                        
+                                        if index.is_none() {
+                                            index = Some(reg_value);
+                                            
+                                            // Check for scale
+                                            match parser.peek() {
+                                                Some((token, _)) if token.token_type == TokenType::Asterisk => {
+                                                    parser.advance(); // Consume '*'
+                                                    
+                                                    match parser.peek() {
+                                                        Some((scale_token, _)) if scale_token.token_type == TokenType::Immediate => {
+                                                            let scale_value = scale_token.value.clone();
+                                                            parser.advance();
+                                                            scale = Some(scale_value);
+                                                        },
+                                                        _ => {},
+                                                    }
+                                                },
+                                                _ => {},
+                                            }
+                                        } else {
+                                            return Err("Memory reference can only have one index register".to_string());
+                                        }
+                                    },
+                                    TokenType::Immediate => {
+                                        let imm_value = next.value.clone();
+                                        parser.advance();
+                                        displacement = Some(imm_value);
+                                    },
+                                    TokenType::Label | TokenType::LabelRef => {
+                                        let label_value = next.value.clone();
+                                        parser.advance();
+                                        displacement = Some(label_value);
+                                    },
+                                    _ => return Err(format!("Unexpected token after '+': {:?}", next.token_type)),
+                                }
+                            },
+                            None => return Err("Unexpected end of tokens after '+'".to_string()),
+                        }
+                    },
+                    TokenType::Minus => {
+                        parser.advance(); // Consume '-'
+                        
+                        // Parse what comes after the '-'
+                        match parser.peek() {
+                            Some((next, _)) if next.token_type == TokenType::Immediate => {
+                                let imm_value = next.value.clone();
+                                parser.advance();
+                                // Make the displacement negative
+                                let negative_value = format!("-{}", imm_value);
+                                displacement = Some(negative_value);
+                            },
+                            _ => return Err("Expected immediate value after '-'".to_string()),
+                        }
+                    },
+                    TokenType::CloseBracket => {
+                        // End of memory reference
+                        break;
+                    },
+                    _ => return Err(format!("Unexpected token in memory reference: {:?}", token.token_type)),
+                }
+            },
+            None => return Err("Unexpected end of tokens in memory reference".to_string()),
+        }
+    }
+    
+    Ok(MemoryReference {
+        base,
+        index,
+        scale,
+        displacement,
+    })
+}
+
+/// Generate machine code for an instruction
+fn generate_machine_code(instr: &Instruction, _opcode_table: &OpcodeTable) -> Option<Vec<u8>> {
+    // For now, let our MachineCodeEncoder handle this
+    // Later this could be expanded with a more comprehensive system
+    Some(vec![0x90]) // NOP placeholder
+}
+
+/// Check if the instruction name is a valid x86-64 instruction
+fn is_valid_instruction(name: &str) -> bool {
+    // A list of common x86-64 instructions for simplicity
+    // In a real implementation, this would be more comprehensive
+    const COMMON_INSTRUCTIONS: &[&str] = &[
+        "mov", "push", "pop", "lea", "add", "sub", "and", "or", "xor",
+        "shl", "shr", "cmp", "test", "jmp", "je", "jne", "jg", "jl",
+        "call", "ret", "nop", "syscall", "int",
+    ];
+    
+    COMMON_INSTRUCTIONS.contains(&name)
+}
+
+/// A machine code encoder for x86-64 instructions
+pub struct MachineCodeEncoder<'a> {
+    opcode_table: &'a OpcodeTable,
+    labels: &'a HashMap<String, usize>,
+}
+
+impl<'a> MachineCodeEncoder<'a> {
+    pub fn new(opcode_table: &'a OpcodeTable, labels: &'a HashMap<String, usize>) -> Self {
+        Self {
+            opcode_table,
+            labels,
+        }
+    }
+    
+    pub fn encode_instruction(&self, instr: &mut Instruction) -> Result<(), String> {
+        // Basic encoding for common x86-64 instructions
+        match instr.name.as_str() {
+            "mov" => self.encode_mov(instr)?,
+            "xor" => self.encode_xor(instr)?,
+            "syscall" => {
+                // syscall is simply 0x0F 0x05
+                instr.machine_code = Some(vec![0x0F, 0x05]);
+            },
+            _ => {
+                // For other instructions, check the opcode table
+                if let Some(opcode_info) = self.opcode_table.get_info(&instr.name) {
+                    if let Some(ref machine_code) = opcode_info.machine_code {
+                        // Convert hex string to bytes
+                        let bytes = hex_to_bytes(machine_code)?;
+                        instr.machine_code = Some(bytes);
+                    }
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fn encode_mov(&self, instr: &mut Instruction) -> Result<(), String> {
+        if instr.operands.len() != 2 {
+            return Err(format!("mov requires 2 operands, got {}", instr.operands.len()));
+        }
+        
+        match (&instr.operands[0], &instr.operands[1]) {
+            (Operand::Register(dst), Operand::Immediate(imm)) => {
+                // Handle mov reg, imm
+                let imm_value = parse_immediate(imm)?;
+                
+                // Determine register encoding
+                match dst.as_str() {
+                    "rax" => {
+                        // mov rax, imm64 -> REX.W + B8 id
+                        let mut code = vec![0x48, 0xB8];
+                        // Add immediate value in little-endian
+                        code.extend_from_slice(&imm_value.to_le_bytes());
+                        instr.machine_code = Some(code);
+                    },
+                    "rdi" => {
+                        // mov rdi, imm64 -> REX.W + BF id
+                        let mut code = vec![0x48, 0xBF];
+                        // Add immediate value in little-endian
+                        code.extend_from_slice(&imm_value.to_le_bytes());
+                        instr.machine_code = Some(code);
+                    },
+                    "rsi" => {
+                        // mov rsi, imm64 -> REX.W + BE id
+                        let mut code = vec![0x48, 0xBE];
+                        // Add immediate value in little-endian
+                        code.extend_from_slice(&imm_value.to_le_bytes());
+                        instr.machine_code = Some(code);
+                    },
+                    "rdx" => {
+                        // mov rdx, imm64 -> REX.W + BA id
+                        let mut code = vec![0x48, 0xBA];
+                        // Add immediate value in little-endian
+                        code.extend_from_slice(&imm_value.to_le_bytes());
+                        instr.machine_code = Some(code);
+                    },
+                    _ => return Err(format!("Unsupported register: {}", dst)),
+                }
+            },
+            (Operand::Register(dst), Operand::LabelRef(label)) => {
+                // Handle mov reg, label (load effective address)
+                let addr = match self.labels.get(label) {
+                    Some(&addr) => addr as u64,
+                    None => return Err(format!("Label not found: {}", label)),
+                };
+                
+                // Depending on the register
+                match dst.as_str() {
+                    "rsi" => {
+                        // mov rsi, label (effectively LEA)
+                        // 48 BE + 8-byte address
+                        let mut code = vec![0x48, 0xBE];
+                        code.extend_from_slice(&addr.to_le_bytes());
+                        instr.machine_code = Some(code);
+                    },
+                    _ => return Err(format!("Unsupported register for label reference: {}", dst)),
+                }
+            },
+            _ => return Err(format!("Unsupported operands for mov instruction")),
+        }
+        
+        Ok(())
+    }
+    
+    fn encode_xor(&self, instr: &mut Instruction) -> Result<(), String> {
+        if instr.operands.len() != 2 {
+            return Err(format!("xor requires 2 operands, got {}", instr.operands.len()));
+        }
+        
+        match (&instr.operands[0], &instr.operands[1]) {
+            (Operand::Register(dst), Operand::Register(src)) => {
+                if dst == src {
+                    // Special case: xor reg, reg (zero register)
+                    match dst.as_str() {
+                        "rdi" => {
+                            // xor rdi, rdi -> REX.W + 31 FF
+                            instr.machine_code = Some(vec![0x48, 0x31, 0xFF]);
+                        },
+                        _ => return Err(format!("Unsupported register for xor: {}", dst)),
+                    }
+                } else {
+                    return Err(format!("Unsupported registers for xor: {}, {}", dst, src));
+                }
+            },
+            _ => return Err(format!("Unsupported operands for xor instruction")),
+        }
+        
+        Ok(())
+    }
+}
+
+// Helper function to parse immediate values
+fn parse_immediate(imm: &str) -> Result<u64, String> {
+    if imm.starts_with("0x") {
+        // Hexadecimal
+        u64::from_str_radix(&imm[2..], 16)
+            .map_err(|_| format!("Invalid hex value: {}", imm))
+    } else {
+        // Decimal
+        imm.parse::<u64>()
+            .map_err(|_| format!("Invalid decimal value: {}", imm))
+    }
+}
+
+// Helper function to convert hex string to bytes
+fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, String> {
+    let hex = hex.trim().replace(" ", "");
+    let mut bytes = Vec::new();
+    
+    let mut i = 0;
+    while i < hex.len() {
+        if i + 2 > hex.len() {
+            return Err(format!("Invalid hex string length: {}", hex));
+        }
+        
+        let byte_str = &hex[i..i+2];
+        let byte = u8::from_str_radix(byte_str, 16)
+            .map_err(|e| format!("Invalid hex byte '{}': {}", byte_str, e))?;
+        
+        bytes.push(byte);
+        i += 2;
+    }
+    
+    Ok(bytes)
+} 

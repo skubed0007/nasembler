@@ -1,0 +1,355 @@
+use std::fmt;
+use colored::*;
+
+/// Error type for the assembler
+#[derive(Debug, Clone)]
+pub enum ErrorType {
+    // Tokenization errors
+    UnexpectedCharacter,
+    InvalidToken,
+    UnclosedString,
+    
+    // Parsing errors
+    UnexpectedToken,
+    ExpectedToken,
+    UnknownDirective,
+    UnknownInstruction,
+    InvalidOperand,
+    InvalidMemoryReference,
+    
+    // Label errors
+    UndefinedLabel,
+    DuplicateLabel,
+    MalformedLabel,
+    
+    // Code generation errors
+    EncodingError,
+    InvalidAddressing,
+    InvalidCombination,
+    
+    // ELF generation errors
+    SectionError,
+    ElfWriteError,
+    
+    // I/O errors
+    FileError,
+    
+    // Other errors
+    SyntaxError,
+    SemanticError,
+    InternalError,
+    Other
+}
+
+impl fmt::Display for ErrorType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            // Tokenization errors
+            ErrorType::UnexpectedCharacter => "Unexpected Character",
+            ErrorType::InvalidToken => "Invalid Token",
+            ErrorType::UnclosedString => "Unclosed String",
+            
+            // Parsing errors
+            ErrorType::UnexpectedToken => "Unexpected Token",
+            ErrorType::ExpectedToken => "Expected Token",
+            ErrorType::UnknownDirective => "Unknown Directive",
+            ErrorType::UnknownInstruction => "Unknown Instruction",
+            ErrorType::InvalidOperand => "Invalid Operand",
+            ErrorType::InvalidMemoryReference => "Invalid Memory Reference",
+            
+            // Label errors
+            ErrorType::UndefinedLabel => "Undefined Label",
+            ErrorType::DuplicateLabel => "Duplicate Label",
+            ErrorType::MalformedLabel => "Malformed Label",
+            
+            // Code generation errors
+            ErrorType::EncodingError => "Encoding Error",
+            ErrorType::InvalidAddressing => "Invalid Addressing Mode",
+            ErrorType::InvalidCombination => "Invalid Combination",
+            
+            // ELF generation errors
+            ErrorType::SectionError => "Section Error",
+            ErrorType::ElfWriteError => "ELF Write Error",
+            
+            // I/O errors
+            ErrorType::FileError => "File Error",
+            
+            // Other errors
+            ErrorType::SyntaxError => "Syntax Error",
+            ErrorType::SemanticError => "Semantic Error",
+            ErrorType::InternalError => "Internal Error",
+            ErrorType::Other => "Other Error",
+        };
+        
+        write!(f, "{}", s)
+    }
+}
+
+/// Source location information
+#[derive(Debug, Clone)]
+pub struct SourceLocation {
+    pub file: String,
+    pub line: usize,
+    pub column: usize,
+    pub line_content: Option<String>,
+}
+
+impl SourceLocation {
+    pub fn new(file: String, line: usize, column: usize) -> Self {
+        Self {
+            file,
+            line,
+            column,
+            line_content: None,
+        }
+    }
+    
+    pub fn with_line_content(mut self, content: String) -> Self {
+        self.line_content = Some(content);
+        self
+    }
+}
+
+impl fmt::Display for SourceLocation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}:{}", self.file, self.line, self.column)
+    }
+}
+
+/// Error details
+#[derive(Debug, Clone)]
+pub struct ErrorDetail {
+    pub message: String,
+    pub help: Option<String>,
+    pub note: Option<String>,
+}
+
+impl ErrorDetail {
+    pub fn new(message: String) -> Self {
+        Self {
+            message,
+            help: None,
+            note: None,
+        }
+    }
+    
+    pub fn with_help(mut self, help: String) -> Self {
+        self.help = Some(help);
+        self
+    }
+    
+    pub fn with_note(mut self, note: String) -> Self {
+        self.note = Some(note);
+        self
+    }
+}
+
+/// Assembler error
+#[derive(Debug, Clone)]
+pub struct Error {
+    pub error_type: ErrorType,
+    pub location: Option<SourceLocation>,
+    pub detail: ErrorDetail,
+    pub sub_errors: Vec<Error>,
+}
+
+impl Error {
+    pub fn new(error_type: ErrorType, detail: ErrorDetail) -> Self {
+        Self {
+            error_type,
+            location: None,
+            detail,
+            sub_errors: Vec::new(),
+        }
+    }
+    
+    pub fn with_location(mut self, location: SourceLocation) -> Self {
+        self.location = Some(location);
+        self
+    }
+    
+    pub fn with_sub_error(mut self, error: Error) -> Self {
+        self.sub_errors.push(error);
+        self
+    }
+    
+    pub fn add_sub_error(&mut self, error: Error) {
+        self.sub_errors.push(error);
+    }
+    
+    /// Generate a colorized tree-like display of the error
+    pub fn display(&self) -> String {
+        let mut output = String::new();
+        
+        // Error header
+        let header = format!("{}: {}", self.error_type.to_string().red().bold(), self.detail.message);
+        output.push_str(&header);
+        output.push('\n');
+        
+        // Location
+        if let Some(ref location) = self.location {
+            let location_str = format!("  {} {}", "→".bright_blue(), location.to_string().bright_blue());
+            output.push_str(&location_str);
+            output.push('\n');
+            
+            // Line content if available
+            if let Some(ref line_content) = location.line_content {
+                output.push_str(&format!("    {}\n", line_content));
+                
+                // Pointer to the column
+                let mut pointer = String::new();
+                for _ in 0..location.column {
+                    pointer.push(' ');
+                }
+                pointer.push('^');
+                output.push_str(&format!("    {}\n", pointer.bright_yellow()));
+            }
+        }
+        
+        // Help message
+        if let Some(ref help) = self.detail.help {
+            output.push_str(&format!("  {} {}\n", "help:".green().bold(), help));
+        }
+        
+        // Note
+        if let Some(ref note) = self.detail.note {
+            output.push_str(&format!("  {} {}\n", "note:".bright_cyan().bold(), note));
+        }
+        
+        // Sub-errors
+        if !self.sub_errors.is_empty() {
+            output.push_str("  caused by:\n");
+            
+            for (i, error) in self.sub_errors.iter().enumerate() {
+                let is_last = i == self.sub_errors.len() - 1;
+                let prefix = if is_last { "  └─ " } else { "  ├─ " };
+                
+                // First line of sub-error
+                let sub_error_first_line = format!("{}{}: {}", 
+                    prefix, 
+                    error.error_type.to_string().red(), 
+                    error.detail.message
+                );
+                output.push_str(&sub_error_first_line);
+                output.push('\n');
+                
+                // Location
+                if let Some(ref location) = error.location {
+                    let location_prefix = if is_last { "     " } else { "  │  " };
+                    let location_str = format!("{}{} {}", 
+                        location_prefix, 
+                        "→".bright_blue(), 
+                        location.to_string().bright_blue()
+                    );
+                    output.push_str(&location_str);
+                    output.push('\n');
+                    
+                    // Line content if available
+                    if let Some(ref line_content) = location.line_content {
+                        let content_prefix = if is_last { "       " } else { "  │    " };
+                        output.push_str(&format!("{}{}\n", content_prefix, line_content));
+                        
+                        // Pointer to the column
+                        let mut pointer = String::new();
+                        for _ in 0..location.column {
+                            pointer.push(' ');
+                        }
+                        pointer.push('^');
+                        output.push_str(&format!("{}{}\n", content_prefix, pointer.bright_yellow()));
+                    }
+                }
+                
+                // Help message
+                if let Some(ref help) = error.detail.help {
+                    let help_prefix = if is_last { "     " } else { "  │  " };
+                    output.push_str(&format!("{}{} {}\n", 
+                        help_prefix, 
+                        "help:".green().bold(), 
+                        help
+                    ));
+                }
+                
+                // Note
+                if let Some(ref note) = error.detail.note {
+                    let note_prefix = if is_last { "     " } else { "  │  " };
+                    output.push_str(&format!("{}{} {}\n", 
+                        note_prefix, 
+                        "note:".bright_cyan().bold(), 
+                        note
+                    ));
+                }
+            }
+        }
+        
+        output
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.display())
+    }
+}
+
+impl std::error::Error for Error {}
+
+/// Create result type for assembler operations
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Helper function to create a token error
+pub fn token_error(message: String, file: String, line: usize, column: usize, token: &str) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help(format!("Check the token '{}' syntax", token));
+    
+    let location = SourceLocation::new(file, line, column);
+    
+    Error::new(ErrorType::InvalidToken, detail)
+        .with_location(location)
+}
+
+/// Helper function to create a parse error
+pub fn parse_error(message: String, file: String, line: usize, column: usize, line_content: Option<String>) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help("Check the syntax near this location".to_string());
+    
+    let mut location = SourceLocation::new(file, line, column);
+    if let Some(content) = line_content {
+        location = location.with_line_content(content);
+    }
+    
+    Error::new(ErrorType::SyntaxError, detail)
+        .with_location(location)
+}
+
+/// Helper function to create a label error
+pub fn label_error(message: String, label: &str) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help(format!("Check the definition of label '{}'", label));
+    
+    Error::new(ErrorType::UndefinedLabel, detail)
+}
+
+/// Helper function to create an encoding error
+pub fn encoding_error(message: String, instruction: &str) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help(format!("Check the instruction '{}' and its operands", instruction));
+    
+    Error::new(ErrorType::EncodingError, detail)
+}
+
+/// Helper function to create a file error
+pub fn file_error(message: String, path: &str) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help(format!("Check if the file '{}' exists and is accessible", path));
+    
+    Error::new(ErrorType::FileError, detail)
+}
+
+/// Helper function to create an internal error
+pub fn internal_error(message: String) -> Error {
+    let detail = ErrorDetail::new(message)
+        .with_help("This is an internal error in the assembler".to_string())
+        .with_note("Please report this issue to the developers".to_string());
+    
+    Error::new(ErrorType::InternalError, detail)
+} 
