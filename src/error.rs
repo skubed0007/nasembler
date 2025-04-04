@@ -557,11 +557,8 @@ impl ErrorCollector {
             );
             
             // Truncate message if it's too long for better display
-            let mut message = error.detail.message.clone();
-            if message.len() > 80 {
-                message.truncate(77);
-                message.push_str("...");
-            }
+            let message = error.detail.message.clone();
+            
             error_header.push_str(&message.white().to_string());
             
             output.push_str(&format!("{}\n", error_header));

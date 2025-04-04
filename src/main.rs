@@ -221,6 +221,14 @@ fn main() -> Result<(), String> {
     // Generate output based on format
     let generation_start = Instant::now();
     let mut output_successful = false;
+    // Display any errors collected during processing
+    if error_collector.has_errors() || (error_collector.warning_count() > 0 && !args.silent) {
+        println!("{}", error_collector.display_errors());
+        
+        if error_collector.has_fatal_errors() || error_collector.has_errors() {
+            process::exit(1);
+        }
+    }
     
     if args.format == OutputFormat::Elf {
         let mut elf_generator = ElfGenerator::new(program);
@@ -267,14 +275,6 @@ fn main() -> Result<(), String> {
         error_collector.add_error(error);
     }
     
-    // Display any errors collected during processing
-    if error_collector.has_errors() || (error_collector.warning_count() > 0 && !args.silent) {
-        println!("{}", error_collector.display_errors());
-        
-        if error_collector.has_fatal_errors() || error_collector.has_errors() {
-            process::exit(1);
-        }
-    }
     
     // Show summary if compilation was successful
     if output_successful {
